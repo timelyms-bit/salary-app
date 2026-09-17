@@ -34,7 +34,7 @@ const loadUserSalaries = () => {
   }
 }
 
-function SalaryCard({ salary, onClick }) {
+function SalaryCard({ salary, onClick, isSelected, onToggleCompare }) {
   const content = <>
     <div className="card-head"><div><h3>{salary.company}</h3><p>{salary.role} · 근속 {salary.years}년</p></div><span className="month-badge">{salary.month.replace('-', '.')} 급여</span></div>
     <div className="salary-highlight"><span>실수령액</span><strong>{won(salary.net)}</strong></div>
@@ -45,12 +45,20 @@ function SalaryCard({ salary, onClick }) {
     </dl>
   </>
 
-  return onClick
-    ? <button type="button" className="salary-card salary-card-button" onClick={onClick} aria-label={`${salary.company} 상세 보기`}>{content}<span className="detail-hint">회사 상세 보기 <span aria-hidden="true">→</span></span></button>
-    : <article className="salary-card">{content}</article>
+  if (!onClick) return <article className="salary-card">{content}</article>
+
+  return <article className={`salary-card salary-card-selectable ${isSelected ? 'selected' : ''}`}>
+    <button type="button" className="salary-card-button" onClick={onClick} aria-label={`${salary.company} 상세 보기`}>
+      {content}<span className="detail-hint">회사 상세 보기 <span aria-hidden="true">→</span></span>
+    </button>
+    <button type="button" className="compare-selector" onClick={onToggleCompare} aria-pressed={isSelected}>
+      <span className="check-mark" aria-hidden="true">{isSelected ? '✓' : ''}</span>
+      {isSelected ? '비교 선택됨' : '비교할 월급 선택'}
+    </button>
+  </article>
 }
 
-function Home({ salaries, userSalaryCount, onRegister, onOpenCompany, onReset }) {
+function Home({ salaries, userSalaryCount, selectedIds, onRegister, onOpenCompany, onToggleCompare, onCompare, onClearCompare, onReset }) {
   const [query, setQuery] = useState('')
   const filtered = useMemo(() => {
     const keyword = query.trim().toLocaleLowerCase('ko-KR')
@@ -62,10 +70,48 @@ function Home({ salaries, userSalaryCount, onRegister, onOpenCompany, onReset })
     <section className="hero-copy"><p className="eyebrow">직장인 월급 비교</p><h1>다른 회사 사람들은<br />이번 달 얼마나 받았을까?</h1><p className="intro">급여와 근무시간을 함께 보고, 내가 받는 월급을 제대로 비교해 보세요.</p></section>
     <div className="search-wrap"><span className="search-icon" aria-hidden="true" /><input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="회사 또는 직무 검색" aria-label="회사 또는 직무 검색" /></div>
     <button className="primary-button register-cta" type="button" onClick={onRegister}><span>내 월급 등록하기</span><span aria-hidden="true">＋</span></button>
+    {selectedIds.length > 0 && <section className="compare-tray" aria-live="polite">
+      <div><strong>비교할 월급 {selectedIds.length}/2</strong><button type="button" onClick={onClearCompare}>선택 초기화</button></div>
+      {selectedIds.length === 2 && <button className="primary-button compare-button" type="button" onClick={onCompare}>선택한 월급 비교하기</button>}
+    </section>}
     <div className="list-heading"><h2>{query ? '검색 결과' : '최근 등록된 월급'}</h2><span>{filtered.length}건</span></div>
-    <section className="salary-list" aria-live="polite">{filtered.length ? filtered.map((salary) => <SalaryCard key={salary.id} salary={salary} onClick={() => onOpenCompany(salary.company)} />) : <div className="empty-result"><strong>검색 결과가 없어요</strong><p>다른 회사명이나 직무로 검색해 보세요.</p></div>}</section>
+    <section className="salary-list" aria-live="polite">{filtered.length ? filtered.map((salary) => <SalaryCard key={salary.id} salary={salary} isSelected={selectedIds.includes(salary.id)} onClick={() => onOpenCompany(salary.company)} onToggleCompare={() => onToggleCompare(salary.id)} />) : <div className="empty-result"><strong>검색 결과가 없어요</strong><p>다른 회사명이나 직무로 검색해 보세요.</p></div>}</section>
     <p className="data-note">표시된 내용은 MVP 테스트용 가상 데이터입니다.</p>
     {userSalaryCount > 0 && <button className="dev-reset" type="button" onClick={onReset}>개발용 · 추가 기록 초기화</button>}
+  </main>
+}
+
+const numericDifference = (a, b, unit, lowerIsWord = '낮음', higherIsWord = '높음') => {
+  const difference = Math.round(Math.abs(a - b))
+  if (difference === 0) return '같음'
+  const label = difference.toLocaleString('ko-KR')
+  return a > b ? `A가 ${label}${unit} ${higherIsWord}` : `A가 ${label}${unit} ${lowerIsWord}`
+}
+
+function Comparison({ records, onBack, onClear }) {
+  const [a, b] = records
+  const rows = [
+    ['회사', a.company, b.company],
+    ['직무', a.role, b.role],
+    ['근속연수', `${a.years}년`, `${b.years}년`, numericDifference(a.years, b.years, '년')],
+    ['급여월', a.month.replace('-', '.'), b.month.replace('-', '.')],
+    ['총급여', won(a.gross), won(b.gross), numericDifference(a.gross, b.gross, '원')],
+    ['실수령액', won(a.net), won(b.net), numericDifference(a.net, b.net, '원')],
+    ['총 근무시간', `${a.hours.toLocaleString('ko-KR')}시간`, `${b.hours.toLocaleString('ko-KR')}시간`, numericDifference(a.hours, b.hours, '시간', '적음', '많음')],
+    ['진짜 시급', won(a.gross / a.hours), won(b.gross / b.hours), numericDifference(a.gross / a.hours, b.gross / b.hours, '원')],
+  ]
+
+  return <main className="page comparison-page">
+    <header className="sub-header"><button className="back-button" type="button" onClick={onBack} aria-label="홈으로 돌아가기">←</button><strong>월급 비교</strong><span /></header>
+    <section className="comparison-hero"><p className="eyebrow">선택한 월급 2건</p><h1>조건별로 나란히<br />비교해 보세요</h1><p>어느 쪽이 더 좋은지 판단하지 않고 사실만 보여드려요.</p></section>
+    <div className="comparison-labels"><div><span>A</span><strong>{a.company}</strong></div><div><span>B</span><strong>{b.company}</strong></div></div>
+    <section className="comparison-table">
+      {rows.map(([label, valueA, valueB, difference]) => <div className="comparison-row" key={label}>
+        <h2>{label}</h2><div className="comparison-values"><strong>{valueA}</strong><strong>{valueB}</strong></div>
+        {difference && <p>{difference}</p>}
+      </div>)}
+    </section>
+    <button className="clear-comparison" type="button" onClick={onClear}>비교 선택 초기화하고 홈으로</button>
   </main>
 }
 
@@ -140,6 +186,7 @@ function App() {
   const [screen, setScreen] = useState('home')
   const [userSalaries, setUserSalaries] = useState(loadUserSalaries)
   const [selectedCompany, setSelectedCompany] = useState('')
+  const [selectedIds, setSelectedIds] = useState([])
   const salaries = [...userSalaries, ...initialSalaries]
   const go = (next) => { setScreen(next); window.scrollTo({ top: 0 }) }
   const addSalary = (salary) => {
@@ -151,11 +198,15 @@ function App() {
   const resetUserSalaries = () => {
     localStorage.removeItem(storageKey)
     setUserSalaries([])
+    setSelectedIds([])
   }
+  const toggleCompare = (id) => setSelectedIds((current) => current.includes(id) ? current.filter((selectedId) => selectedId !== id) : current.length < 2 ? [...current, id] : current)
+  const clearCompare = () => { setSelectedIds([]); go('home') }
   const openCompany = (company) => { setSelectedCompany(company); go('company') }
 
   if (screen === 'register') return <Register onBack={() => go('home')} onSubmit={addSalary} />
   if (screen === 'company') return <CompanyDetail company={selectedCompany} salaries={salaries} onBack={() => go('home')} />
-  return <Home salaries={salaries} userSalaryCount={userSalaries.length} onRegister={() => go('register')} onOpenCompany={openCompany} onReset={resetUserSalaries} />
+  if (screen === 'comparison') return <Comparison records={selectedIds.map((id) => salaries.find((salary) => salary.id === id))} onBack={() => go('home')} onClear={clearCompare} />
+  return <Home salaries={salaries} userSalaryCount={userSalaries.length} selectedIds={selectedIds} onRegister={() => go('register')} onOpenCompany={openCompany} onToggleCompare={toggleCompare} onCompare={() => go('comparison')} onClearCompare={() => setSelectedIds([])} onReset={resetUserSalaries} />
 }
 export default App
