@@ -81,11 +81,9 @@ Workflow:
 The user does not want to monitor every small edit. The user only wants to review important outputs such as a completed screen, core feature, DB change, login, payment, or pre-release build.
 
 ## APP Director status
-Two installer generations were prepared in chat:
-- basic auto-save/director installer
-- review-gate installer with APPROVE / REQUEST CHANGES controls
-
-IMPORTANT: installation of the latest review-gate installer was prepared but not yet confirmed by the user at the time this handoff was written. Verify before assuming it is active.
+- Latest review-gate installer with APPROVE / REQUEST CHANGES controls: **installation confirmed by user**.
+- Intended behavior: validated milestone -> READY_FOR_REVIEW -> stop -> user decision -> next milestone or correction.
+- Do not assume Codex should continue autonomously beyond a review gate.
 
 ## Current next step
 Before adding new architecture, verify the salary registration flow end-to-end once:
