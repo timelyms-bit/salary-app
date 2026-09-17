@@ -1,6 +1,6 @@
 {
-  "command_id": "20260917-m2-approve-001",
-  "milestone": 2,
+  "command_id": "20260917-m3-approve-001",
+  "milestone": 3,
   "action": "APPROVE",
-  "note": "Milestone 2 approved in ChatGPT after manual UI verification."
+  "note": "Milestone 3 approved in ChatGPT after persistence flow verification."
 }
