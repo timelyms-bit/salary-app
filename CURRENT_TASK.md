@@ -1,37 +1,48 @@
-# Current Task — Milestone 2
+# Current Task — Milestone 3
 
 ## Goal
-Add a meaningful company-detail experience on top of MVP 0.1 without adding backend/login yet.
+Make salary entries persist after browser refresh so the app feels usable before introducing a real backend.
 
 ## Scope
-Implement ONE milestone only: **company detail + company-level aggregation**.
+Implement ONE milestone only: **local persistence with localStorage**.
 
 ### Required behavior
-1. On the home salary list, clicking/tapping a salary card opens a company detail view for that card's company.
-2. Company detail view must show:
-   - company name
-   - number of salary records for that company
-   - average gross pay
-   - average net pay
-   - average total work hours
-   - average real hourly wage
-3. Below the summary, show all salary records for that company, newest/most recently added first.
-4. Add a clear back button to return to home.
-5. Keep the existing home search and salary registration flow working.
-6. Use the existing sample/in-memory data only. Do NOT add Supabase, login, routing packages, or any new dependency in this milestone.
-7. Keep Korean UI and current visual style. Mobile-first, but desktop must remain usable.
-8. Currency formatting must remain comma-separated KRW. Real hourly wage = gross pay / total work hours.
+1. Keep the existing sample salary data available on first load.
+2. When a user registers a new salary entry, save it to `localStorage`.
+3. On page reload, restore user-added salary entries from `localStorage`.
+4. Do not duplicate the built-in sample data in `localStorage`.
+5. Preserve the current home search, registration flow, company detail screen, company aggregates, and newest-first ordering.
+6. Add a small clearly labeled development-only reset control that removes only user-added local salary records and returns the app to sample data. Keep it unobtrusive.
+7. Handle malformed/corrupted localStorage data safely: ignore invalid data and continue loading the app instead of crashing.
+8. No Supabase, backend, login, router, or new package yet.
+9. Keep Korean UI and current visual style.
 
 ## Validation
 - Run `npm run lint`
 - Run `npm run build`
-- Fix any errors until both pass.
+- Fix errors until both pass.
+- Manually verify this flow:
+  1. register one salary record
+  2. refresh browser
+  3. confirm the record remains
+  4. open its company detail and confirm aggregates include it
+  5. use reset control and confirm only added records disappear
+
+## Git / completion rule
+When Milestone 3 is fully finished and validated:
+1. Commit ONLY the Milestone 3 source changes.
+2. Do not commit `.appdirector/` runtime files.
+3. Commit message: `milestone 3: local persistence`
+4. Push to `origin/main`.
+5. STOP. Do not begin Milestone 4.
 
 ## Reporting
 When finished, report only:
 - files changed
 - features implemented
+- manual persistence test result
 - lint result
 - build result
+- commit SHA / push result
 
-Do not start Milestone 3. Stop after Milestone 2 is complete and wait for review.
+Do not start Milestone 4. Wait for user review.
