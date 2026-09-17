@@ -12,7 +12,27 @@ const initialSalaries = [
   { id: 8, company: '현대자동차', role: '생산직', years: 2, month: '2026-07', gross: 4450000, net: 3740000, hours: 218 },
 ]
 const emptyForm = { company: '', role: '', years: '', month: '', gross: '', net: '', hours: '' }
+const storageKey = 'salary-app:user-salaries'
 const won = (value) => `${Math.round(value).toLocaleString('ko-KR')}원`
+
+const isValidSalary = (salary) => salary
+  && (typeof salary.id === 'number' || typeof salary.id === 'string')
+  && typeof salary.company === 'string' && salary.company.trim().length > 0
+  && typeof salary.role === 'string' && salary.role.trim().length > 0
+  && Number.isFinite(salary.years) && salary.years >= 0
+  && typeof salary.month === 'string' && /^\d{4}-\d{2}$/.test(salary.month)
+  && Number.isFinite(salary.gross) && salary.gross > 0
+  && Number.isFinite(salary.net) && salary.net > 0
+  && Number.isFinite(salary.hours) && salary.hours > 0
+
+const loadUserSalaries = () => {
+  try {
+    const stored = JSON.parse(localStorage.getItem(storageKey) || '[]')
+    return Array.isArray(stored) ? stored.filter(isValidSalary) : []
+  } catch {
+    return []
+  }
+}
 
 function SalaryCard({ salary, onClick }) {
   const content = <>
@@ -30,7 +50,7 @@ function SalaryCard({ salary, onClick }) {
     : <article className="salary-card">{content}</article>
 }
 
-function Home({ salaries, onRegister, onOpenCompany }) {
+function Home({ salaries, userSalaryCount, onRegister, onOpenCompany, onReset }) {
   const [query, setQuery] = useState('')
   const filtered = useMemo(() => {
     const keyword = query.trim().toLocaleLowerCase('ko-KR')
@@ -45,6 +65,7 @@ function Home({ salaries, onRegister, onOpenCompany }) {
     <div className="list-heading"><h2>{query ? '검색 결과' : '최근 등록된 월급'}</h2><span>{filtered.length}건</span></div>
     <section className="salary-list" aria-live="polite">{filtered.length ? filtered.map((salary) => <SalaryCard key={salary.id} salary={salary} onClick={() => onOpenCompany(salary.company)} />) : <div className="empty-result"><strong>검색 결과가 없어요</strong><p>다른 회사명이나 직무로 검색해 보세요.</p></div>}</section>
     <p className="data-note">표시된 내용은 MVP 테스트용 가상 데이터입니다.</p>
+    {userSalaryCount > 0 && <button className="dev-reset" type="button" onClick={onReset}>개발용 · 추가 기록 초기화</button>}
   </main>
 }
 
@@ -117,14 +138,24 @@ function Register({ onBack, onSubmit }) {
 
 function App() {
   const [screen, setScreen] = useState('home')
-  const [salaries, setSalaries] = useState(initialSalaries)
+  const [userSalaries, setUserSalaries] = useState(loadUserSalaries)
   const [selectedCompany, setSelectedCompany] = useState('')
+  const salaries = [...userSalaries, ...initialSalaries]
   const go = (next) => { setScreen(next); window.scrollTo({ top: 0 }) }
-  const addSalary = (salary) => { setSalaries((current) => [salary, ...current]); go('home') }
+  const addSalary = (salary) => {
+    const next = [salary, ...userSalaries]
+    setUserSalaries(next)
+    localStorage.setItem(storageKey, JSON.stringify(next))
+    go('home')
+  }
+  const resetUserSalaries = () => {
+    localStorage.removeItem(storageKey)
+    setUserSalaries([])
+  }
   const openCompany = (company) => { setSelectedCompany(company); go('company') }
 
   if (screen === 'register') return <Register onBack={() => go('home')} onSubmit={addSalary} />
   if (screen === 'company') return <CompanyDetail company={selectedCompany} salaries={salaries} onBack={() => go('home')} />
-  return <Home salaries={salaries} onRegister={() => go('register')} onOpenCompany={openCompany} />
+  return <Home salaries={salaries} userSalaryCount={userSalaries.length} onRegister={() => go('register')} onOpenCompany={openCompany} onReset={resetUserSalaries} />
 }
 export default App
