@@ -58,7 +58,7 @@ function SalaryCard({ salary, onClick, isSelected, onToggleCompare }) {
   </article>
 }
 
-function Home({ salaries, userSalaryCount, selectedIds, onRegister, onOpenCompany, onToggleCompare, onCompare, onClearCompare, onReset }) {
+function Home({ salaries, userSalaryCount, selectedIds, onRegister, onOpenCompany, onToggleCompare, onCompare, onClearCompare, onReset, onPrivacy }) {
   const [query, setQuery] = useState('')
   const filtered = useMemo(() => {
     const keyword = query.trim().toLocaleLowerCase('ko-KR')
@@ -78,6 +78,7 @@ function Home({ salaries, userSalaryCount, selectedIds, onRegister, onOpenCompan
     <section className="salary-list" aria-live="polite">{filtered.length ? filtered.map((salary) => <SalaryCard key={salary.id} salary={salary} isSelected={selectedIds.includes(salary.id)} onClick={() => onOpenCompany(salary.company)} onToggleCompare={() => onToggleCompare(salary.id)} />) : <div className="empty-result"><strong>검색 결과가 없어요</strong><p>다른 회사명이나 직무로 검색해 보세요.</p></div>}</section>
     <p className="data-note">표시된 내용은 MVP 테스트용 가상 데이터입니다.</p>
     {userSalaryCount > 0 && <button className="dev-reset" type="button" onClick={onReset}>개발용 · 추가 기록 초기화</button>}
+    <footer className="app-footer"><button type="button" onClick={onPrivacy}>개인정보처리방침</button><span>월급 0.1.0</span></footer>
   </main>
 }
 
@@ -112,6 +113,22 @@ function Comparison({ records, onBack, onClear }) {
       </div>)}
     </section>
     <button className="clear-comparison" type="button" onClick={onClear}>비교 선택 초기화하고 홈으로</button>
+  </main>
+}
+
+function PrivacyPolicy({ onBack }) {
+  return <main className="page policy-page">
+    <header className="sub-header"><button className="back-button" type="button" onClick={onBack} aria-label="홈으로 돌아가기">←</button><strong>개인정보처리방침</strong><span /></header>
+    <section className="policy-content">
+      <p className="eyebrow">월급 앱 개인정보 안내</p>
+      <h1>개인정보처리방침</h1>
+      <p className="policy-date">시행일: 2026년 9월 17일</p>
+      <section><h2>1. 수집 및 이용</h2><p>월급 앱은 회원가입이나 계정을 제공하지 않으며, 사용자를 식별할 수 있는 개인정보를 수집하지 않습니다.</p></section>
+      <section><h2>2. 월급 정보의 저장</h2><p>사용자가 입력한 회사명, 직무, 근속연수, 급여월, 총급여, 실수령액 및 근무시간은 현재 사용 중인 기기의 앱 내부 localStorage에만 저장됩니다.</p></section>
+      <section><h2>3. 서버 전송 및 제3자 제공</h2><p>입력한 월급 정보는 외부 서버로 전송되지 않으며, 운영자 또는 제3자에게 제공되지 않습니다.</p></section>
+      <section><h2>4. 삭제</h2><p>홈 화면의 개발용 초기화 기능을 사용하거나 앱의 저장공간을 삭제 또는 앱을 제거하면 기기에 저장된 월급 기록이 삭제될 수 있습니다.</p></section>
+      <section><h2>5. 방침 변경</h2><p>향후 서버, 계정 또는 분석 기능이 추가되면 변경된 처리방침을 앱에서 안내합니다.</p></section>
+    </section>
   </main>
 }
 
@@ -207,6 +224,7 @@ function App() {
   if (screen === 'register') return <Register onBack={() => go('home')} onSubmit={addSalary} />
   if (screen === 'company') return <CompanyDetail company={selectedCompany} salaries={salaries} onBack={() => go('home')} />
   if (screen === 'comparison') return <Comparison records={selectedIds.map((id) => salaries.find((salary) => salary.id === id))} onBack={() => go('home')} onClear={clearCompare} />
-  return <Home salaries={salaries} userSalaryCount={userSalaries.length} selectedIds={selectedIds} onRegister={() => go('register')} onOpenCompany={openCompany} onToggleCompare={toggleCompare} onCompare={() => go('comparison')} onClearCompare={() => setSelectedIds([])} onReset={resetUserSalaries} />
+  if (screen === 'privacy') return <PrivacyPolicy onBack={() => go('home')} />
+  return <Home salaries={salaries} userSalaryCount={userSalaries.length} selectedIds={selectedIds} onRegister={() => go('register')} onOpenCompany={openCompany} onToggleCompare={toggleCompare} onCompare={() => go('comparison')} onClearCompare={() => setSelectedIds([])} onReset={resetUserSalaries} onPrivacy={() => go('privacy')} />
 }
 export default App
